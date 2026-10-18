@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tickr oracle REST API</title>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1.72.3/dist/browser/standalone.js" integrity="sha384-HWi/QCSPi64AQ0xBXFGDk+7gmvZ4hJ/7sZMIXqWVz6Ikb6+Cxej/hWKaomOStyFb" crossorigin="anonymous"></script>
+<script>
+  // proxyUrl '' keeps try-it requests on this origin; Scalar otherwise routes them via proxy.scalar.com.
+  Scalar.createApiReference('#app', {
+    url: 'openapi.bearer.yaml',
+    proxyUrl: '',
+    withDefaultFonts: false,
+    telemetry: false,
+    persistAuth: false,
+    agent: { disabled: true },
+    mcp: { disabled: true },
+    hideClientButton: true,
+    hideTestRequestButton: true,
+    authentication: { preferredSecurityScheme: 'bearerAuth' },
+  })
+</script>
+</body>
+</html>

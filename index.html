@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tickr oracle API</title>
+<style>
+  :root { --bg: #ffffff; --fg: #1b1f24; --muted: #57606a; --card: #f6f8fa; --line: #d0d7de; --link: #0969da; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0d1117; --fg: #e6edf3; --muted: #8d96a0; --card: #161b22; --line: #30363d; --link: #4493f8; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 16px; }
+  h1 { margin: 0 0 8px; font-size: 1.8rem; }
+  p { color: var(--muted); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin: 24px 0; }
+  .cards a { display: block; padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--fg); text-decoration: none; }
+  .cards a:hover { border-color: var(--link); }
+  .cards strong { display: block; color: var(--link); margin-bottom: 4px; }
+  code { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; font-size: 0.9em; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<main>
+<h1>Tickr oracle API</h1>
+<p>Reference for the signed report API: feeds, latest and historical reports, accepted on-chain values, and the live report WebSocket.</p>
+<div class="cards">
+  <a href="rest.html"><strong>REST reference</strong>Every HTTPS endpoint and its request and response schemas.</a>
+  <a href="ws.html"><strong>WebSocket reference</strong>The report channel at <code>/v1/ws</code> and its message schemas.</a>
+</div>
+<h2>Authentication</h2>
+<p>Every request needs an API token in the header <code>Authorization: Bearer &lt;token&gt;</code>. The WebSocket upgrade at <code>/v1/ws</code> needs the same header.</p>
+<p>These pages are reference only and send no requests. Your Tickr contact gives you the API address and your token.</p>
+</main>
+</body>
+</html>
