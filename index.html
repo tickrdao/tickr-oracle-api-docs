@@ -35,7 +35,15 @@
 <p>Chainlink-style <code>AggregatorV3Adapter</code> addresses for BTC and ETH (8 decimals, latest round only) will be listed here after their testnet deploy.</p>
 <h2>Authentication</h2>
 <p>Every request needs an API token in the header <code>Authorization: Bearer &lt;token&gt;</code>. The WebSocket upgrade at <code>/v1/ws</code> needs the same header.</p>
-<p>These pages are reference only and send no requests. Your Tickr contact gives you the API address and your token.</p>
+<h2>Getting an API token</h2>
+<p>Tokens are not self-service. Tickr issues one token per consumer, so each consumer can be revoked on its own. To get one:</p>
+<ol>
+<li>Ask your Tickr contact for API access and name the team or service that will use it.</li>
+<li>Tickr sends you the token over a private channel, together with the API address and the CA certificate to pin.</li>
+<li>Send it on every request as <code>Authorization: Bearer &lt;token&gt;</code>, and on the WebSocket upgrade at <code>/v1/ws</code>.</li>
+</ol>
+<p>Keep the token secret. If it leaks, tell your Tickr contact, who revokes it and issues a new one.</p>
+<p>These pages are reference only and send no requests.</p>
 </main>
 </body>
 </html>
