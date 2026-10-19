@@ -32,7 +32,7 @@
 <p><code>OracleVerifier</code>: <code>0xa932ffe6e39e967e07ede70d4728f308e9d83411</code>. It verifies the signed reports and also stores them, so read prices here.</p>
 <p><code>OracleAdmin</code>: <code>0x2fd2a3ecd6c74c6f42db8075fe5807eb83275124</code>. It holds the roles, the active epoch and the feed config.</p>
 <p>Feed IDs: BTC/USDC <code>0x5a156200d5ecdc327279bfb6a5c10d46bdd2446a5a231a97cdb68b268d6f547f</code>, ETH/USDC <code>0x67753308930ff5782f387f68e81e084331f64d11baa04277695df0a1047fd279</code>.</p>
-<p>Chainlink-style <code>AggregatorV3Adapter</code> addresses for BTC and ETH (8 decimals, latest round only) will be listed here after their testnet deploy.</p>
+<p>Chainlink-style <code>AggregatorV3Adapter</code> contracts (8 decimals, latest round only). Each one reads from the <code>OracleVerifier</code> above: BTC/USDC <code>0xcccf0424d8e4a6d96d28116bbfe211e7485a98b8</code>, ETH/USDC <code>0x8dc675e403749095441181b18961e6ec12789c48</code>.</p>
 <h2>Authentication</h2>
 <p>Every request needs an API token in the header <code>Authorization: Bearer &lt;token&gt;</code>. The WebSocket upgrade at <code>/v1/ws</code> needs the same header.</p>
 <h2>Getting an API token</h2>
