@@ -118,11 +118,23 @@ components:
               - resync
             subscriptionId:
               type: string
+        properties:
+          header: {}
+          digest: {}
+          signature: {}
+          leaves: {}
+          watermark: {}
+          labels: {}
+          type: {}
+          kind: {}
+          subscriptionId: {}
+        additionalProperties: false
       description: Header carries writerEpoch, sequence and feedsRoot. Leaves and labels cover only subscribed feeds. Replay labels are always non-executable.
     Live:
       contentType: application/json
       payload:
         type: object
+        additionalProperties: false
         required:
         - type
         - subscriptionId
@@ -148,6 +160,15 @@ components:
           properties:
             type:
               const: error
+        properties:
+          error: {}
+          code: {}
+          reason: {}
+          writerEpoch: {}
+          sequence: {}
+          evictedBelowSeq: {}
+          type: {}
+        additionalProperties: false
       description: BackfillUnavailable carries writerEpoch, sequence and evictedBelowSeq from a populated retained window, followed by resync. An empty journal has reason=empty_journal and no invented bounds.
   schemas:
     Bytes32:
@@ -286,6 +307,7 @@ components:
             $ref: '#/components/schemas/Bytes32'
     Label:
       type: object
+      additionalProperties: false
       required:
       - status
       - executable

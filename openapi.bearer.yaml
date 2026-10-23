@@ -138,116 +138,209 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Report'
+            allOf:
+            - $ref: '#/components/schemas/Report'
+            unevaluatedProperties: false
     Invalid:
       description: InvalidSubscription
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            allOf:
+            - $ref: '#/components/schemas/Error'
+            unevaluatedProperties: false
     Unauthorized:
       description: Missing, malformed or unknown Bearer credential
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            allOf:
+            - $ref: '#/components/schemas/Error'
+            unevaluatedProperties: false
     Forbidden:
       description: Authenticated principal without permission
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            allOf:
+            - $ref: '#/components/schemas/Error'
+            unevaluatedProperties: false
     Unavailable:
       description: UnknownFeed or NoUsableReport; the latter carries a reason, including absent or source_unavailable
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            allOf:
+            - $ref: '#/components/schemas/Error'
+            unevaluatedProperties: false
     Conflict:
       description: WrongEpoch; the stored report belongs to a different writer epoch
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            allOf:
+            - $ref: '#/components/schemas/Error'
+            unevaluatedProperties: false
     RateLimited:
       description: RateLimited
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            allOf:
+            - $ref: '#/components/schemas/Error'
+            unevaluatedProperties: false
   schemas:
-    Uint64:
-      type: string
-      pattern: ^(0|[1-9][0-9]{0,18}|1[0-7][0-9]{18}|18[0-3][0-9]{17}|184[0-3][0-9]{16}|1844[0-5][0-9]{15}|18446[0-6][0-9]{14}|184467[0-3][0-9]{13}|1844674[0-3][0-9]{12}|184467440[0-6][0-9]{10}|1844674407[0-2][0-9]{9}|18446744073[0-6][0-9]{8}|1844674407370[0-8][0-9]{6}|18446744073709[0-4][0-9]{5}|184467440737095[0-4][0-9]{4}|18446744073709550[0-9]{3}|18446744073709551[0-5][0-9]{2}|1844674407370955160[0-9]{1}|1844674407370955161[0-4]|18446744073709551615)$
-      maxLength: 20
-      description: Canonical unsigned decimal string, at most 18446744073709551615. No floats, signs, exponents or units.
-      x-maximum: '18446744073709551615'
-    Uint128:
-      type: string
-      pattern: ^(0|[1-9][0-9]{0,37}|[1-2][0-9]{38}|3[0-3][0-9]{37}|340[0-1][0-9]{35}|3402[0-7][0-9]{34}|34028[0-1][0-9]{33}|340282[0-2][0-9]{32}|3402823[0-5][0-9]{31}|34028236[0-5][0-9]{30}|340282366[0-8][0-9]{29}|3402823669[0-1][0-9]{28}|340282366920[0-8][0-9]{26}|3402823669209[0-2][0-9]{25}|34028236692093[0-7][0-9]{24}|340282366920938[0-3][0-9]{23}|3402823669209384[0-5][0-9]{22}|34028236692093846[0-2][0-9]{21}|340282366920938463[0-3][0-9]{20}|3402823669209384634[0-5][0-9]{19}|34028236692093846346[0-2][0-9]{18}|340282366920938463463[0-2][0-9]{17}|3402823669209384634633[0-6][0-9]{16}|34028236692093846346337[0-3][0-9]{15}|340282366920938463463374[0-5][0-9]{14}|34028236692093846346337460[0-6][0-9]{12}|340282366920938463463374607[0-3][0-9]{11}|3402823669209384634633746074[0-2][0-9]{10}|340282366920938463463374607430[0-9]{9}|340282366920938463463374607431[0-6][0-9]{8}|3402823669209384634633746074317[0-5][0-9]{7}|34028236692093846346337460743176[0-7][0-9]{6}|340282366920938463463374607431768[0-1][0-9]{5}|34028236692093846346337460743176820[0-9]{4}|340282366920938463463374607431768210[0-9]{3}|340282366920938463463374607431768211[0-3][0-9]{2}|3402823669209384634633746074317682114[0-4][0-9]{1}|34028236692093846346337460743176821145[0-4]|340282366920938463463374607431768211455)$
-      maxLength: 39
-      description: WAD integer, at most 340282366920938463463374607431768211455.
-      x-maximum: '340282366920938463463374607431768211455'
-    Bytes32:
-      type: string
-      pattern: ^0x[0-9a-fA-F]{64}$
-    Signature:
-      type: string
-      pattern: ^0x[0-9a-fA-F]{130}$
-      description: r||s||v; nonzero in-range scalars, low-s, v=27 or 28.
-    Status:
-      type: string
-      enum:
-      - VALID
-      - UNSAFE
-      - HALTED
-    Watermark:
+    FeedMeta:
+      type: object
+      additionalProperties: false
+      required:
+      - feedId
+      - status
+      - allowedSourceMask
+      - allowedReceiveOnlyMask
+      - configVersion
+      properties:
+        feedId:
+          $ref: '#/components/schemas/Bytes32'
+        status:
+          $ref: '#/components/schemas/Status'
+        allowedSourceMask:
+          type: integer
+          minimum: 0
+          maximum: 7
+        allowedReceiveOnlyMask:
+          type: integer
+          minimum: 0
+          maximum: 7
+        configVersion:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+    AcceptedReport:
       type: object
       additionalProperties: false
       required:
       - writerEpoch
       - sequence
+      - configVersion
+      - configHash
+      - expiresAtUs
       properties:
         writerEpoch:
           $ref: '#/components/schemas/Uint64'
         sequence:
           $ref: '#/components/schemas/Uint64'
-    Header:
-      type: object
-      additionalProperties: false
-      required:
-      - protocolVersion
-      - configVersion
-      - configHash
-      - writerEpoch
-      - sequence
-      - generatedAtUs
-      - expiresAtUs
-      - feedCount
-      - feedsRoot
-      properties:
-        protocolVersion:
-          const: 1
         configVersion:
           type: integer
           minimum: 0
           maximum: 4294967295
         configHash:
           $ref: '#/components/schemas/Bytes32'
+        expiresAtUs:
+          $ref: '#/components/schemas/Uint64'
+    Onchain:
+      type: object
+      additionalProperties: false
+      required:
+      - feedId
+      - acceptedLeaf
+      - usableUntilSec
+      - acceptedReport
+      - usableNow
+      - provenance
+      properties:
+        feedId:
+          $ref: '#/components/schemas/Bytes32'
+        acceptedLeaf:
+          $ref: '#/components/schemas/Leaf'
+        usableUntilSec:
+          $ref: '#/components/schemas/Uint64'
+        acceptedReport:
+          oneOf:
+          - $ref: '#/components/schemas/AcceptedReport'
+          - type: 'null'
+        usableNow:
+          type: boolean
+        onchainRejectAtSec:
+          $ref: '#/components/schemas/Uint64'
+        provenance:
+          enum:
+          - attributed
+          - unavailable
+    Bytes32:
+      type: string
+      pattern: ^0x[0-9a-fA-F]{64}$
+    Uint64:
+      type: string
+      pattern: ^(0|[1-9][0-9]{0,18}|1[0-7][0-9]{18}|18[0-3][0-9]{17}|184[0-3][0-9]{16}|1844[0-5][0-9]{15}|18446[0-6][0-9]{14}|184467[0-3][0-9]{13}|1844674[0-3][0-9]{12}|184467440[0-6][0-9]{10}|1844674407[0-2][0-9]{9}|18446744073[0-6][0-9]{8}|1844674407370[0-8][0-9]{6}|18446744073709[0-4][0-9]{5}|184467440737095[0-4][0-9]{4}|18446744073709550[0-9]{3}|18446744073709551[0-5][0-9]{2}|1844674407370955160[0-9]{1}|1844674407370955161[0-4]|18446744073709551615)$
+      maxLength: 20
+      description: Canonical unsigned decimal string, at most 18446744073709551615. No floats, signs, exponents or units.
+      x-maximum: '18446744073709551615'
+    Report:
+      type: object
+      required:
+      - header
+      - digest
+      - signature
+      - leaves
+      - watermark
+      - labels
+      properties:
+        header:
+          $ref: '#/components/schemas/Header'
+        digest:
+          $ref: '#/components/schemas/Bytes32'
+        signature:
+          $ref: '#/components/schemas/Signature'
+        leaves:
+          type: array
+          minItems: 0
+          maxItems: 32
+          items:
+            $ref: '#/components/schemas/ProvenLeaf'
+        watermark:
+          $ref: '#/components/schemas/Watermark'
+        labels:
+          type: object
+          maxProperties: 32
+          propertyNames:
+            $ref: '#/components/schemas/Bytes32'
+          additionalProperties:
+            $ref: '#/components/schemas/Label'
+    Error:
+      type: object
+      required:
+      - error
+      - code
+      properties:
+        error:
+          type: string
+        code:
+          enum:
+          - UnknownFeed
+          - InvalidSubscription
+          - NoUsableReport
+          - WrongEpoch
+          - HistoricalOnly
+          - BackfillUnavailable
+          - RateLimited
+          - SlowConsumer
+          - Unauthorized
+          - Forbidden
+        reason:
+          type: string
         writerEpoch:
           $ref: '#/components/schemas/Uint64'
         sequence:
           $ref: '#/components/schemas/Uint64'
-        generatedAtUs:
+        evictedBelowSeq:
           $ref: '#/components/schemas/Uint64'
-        expiresAtUs:
-          $ref: '#/components/schemas/Uint64'
-        feedCount:
-          type: integer
-          minimum: 1
-          maximum: 32
-        feedsRoot:
-          $ref: '#/components/schemas/Bytes32'
+    Status:
+      type: string
+      enum:
+      - VALID
+      - UNSAFE
+      - HALTED
     Leaf:
       type: object
       additionalProperties: false
@@ -285,6 +378,46 @@ components:
           type: integer
           minimum: 0
           maximum: 2047
+    Header:
+      type: object
+      additionalProperties: false
+      required:
+      - protocolVersion
+      - configVersion
+      - configHash
+      - writerEpoch
+      - sequence
+      - generatedAtUs
+      - expiresAtUs
+      - feedCount
+      - feedsRoot
+      properties:
+        protocolVersion:
+          const: 1
+        configVersion:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+        configHash:
+          $ref: '#/components/schemas/Bytes32'
+        writerEpoch:
+          $ref: '#/components/schemas/Uint64'
+        sequence:
+          $ref: '#/components/schemas/Uint64'
+        generatedAtUs:
+          $ref: '#/components/schemas/Uint64'
+        expiresAtUs:
+          $ref: '#/components/schemas/Uint64'
+        feedCount:
+          type: integer
+          minimum: 1
+          maximum: 32
+        feedsRoot:
+          $ref: '#/components/schemas/Bytes32'
+    Signature:
+      type: string
+      pattern: ^0x[0-9a-fA-F]{130}$
+      description: r||s||v; nonzero in-range scalars, low-s, v=27 or 28.
     ProvenLeaf:
       type: object
       additionalProperties: false
@@ -300,8 +433,20 @@ components:
           maxItems: 5
           items:
             $ref: '#/components/schemas/Bytes32'
+    Watermark:
+      type: object
+      additionalProperties: false
+      required:
+      - writerEpoch
+      - sequence
+      properties:
+        writerEpoch:
+          $ref: '#/components/schemas/Uint64'
+        sequence:
+          $ref: '#/components/schemas/Uint64'
     Label:
       type: object
+      additionalProperties: false
       required:
       - status
       - executable
@@ -316,136 +461,9 @@ components:
           const: 3
         onchainRejectAtSec:
           $ref: '#/components/schemas/Uint64'
-    Report:
-      type: object
-      required:
-      - header
-      - digest
-      - signature
-      - leaves
-      - watermark
-      - labels
-      properties:
-        header:
-          $ref: '#/components/schemas/Header'
-        digest:
-          $ref: '#/components/schemas/Bytes32'
-        signature:
-          $ref: '#/components/schemas/Signature'
-        leaves:
-          type: array
-          minItems: 0
-          maxItems: 32
-          items:
-            $ref: '#/components/schemas/ProvenLeaf'
-        watermark:
-          $ref: '#/components/schemas/Watermark'
-        labels:
-          type: object
-          maxProperties: 32
-          propertyNames:
-            $ref: '#/components/schemas/Bytes32'
-          additionalProperties:
-            $ref: '#/components/schemas/Label'
-    FeedMeta:
-      type: object
-      required:
-      - feedId
-      - status
-      - allowedSourceMask
-      - allowedReceiveOnlyMask
-      - configVersion
-      properties:
-        feedId:
-          $ref: '#/components/schemas/Bytes32'
-        status:
-          $ref: '#/components/schemas/Status'
-        allowedSourceMask:
-          type: integer
-          minimum: 0
-          maximum: 7
-        allowedReceiveOnlyMask:
-          type: integer
-          minimum: 0
-          maximum: 7
-        configVersion:
-          type: integer
-          minimum: 0
-          maximum: 4294967295
-    AcceptedReport:
-      type: object
-      required:
-      - writerEpoch
-      - sequence
-      - configVersion
-      - configHash
-      - expiresAtUs
-      properties:
-        writerEpoch:
-          $ref: '#/components/schemas/Uint64'
-        sequence:
-          $ref: '#/components/schemas/Uint64'
-        configVersion:
-          type: integer
-          minimum: 0
-          maximum: 4294967295
-        configHash:
-          $ref: '#/components/schemas/Bytes32'
-        expiresAtUs:
-          $ref: '#/components/schemas/Uint64'
-    Onchain:
-      type: object
-      required:
-      - feedId
-      - acceptedLeaf
-      - usableUntilSec
-      - acceptedReport
-      - usableNow
-      - provenance
-      properties:
-        feedId:
-          $ref: '#/components/schemas/Bytes32'
-        acceptedLeaf:
-          $ref: '#/components/schemas/Leaf'
-        usableUntilSec:
-          $ref: '#/components/schemas/Uint64'
-        acceptedReport:
-          oneOf:
-          - $ref: '#/components/schemas/AcceptedReport'
-          - type: 'null'
-        usableNow:
-          type: boolean
-        onchainRejectAtSec:
-          $ref: '#/components/schemas/Uint64'
-        provenance:
-          enum:
-          - attributed
-          - unavailable
-    Error:
-      type: object
-      required:
-      - error
-      - code
-      properties:
-        error:
-          type: string
-        code:
-          enum:
-          - UnknownFeed
-          - InvalidSubscription
-          - NoUsableReport
-          - WrongEpoch
-          - HistoricalOnly
-          - BackfillUnavailable
-          - RateLimited
-          - SlowConsumer
-          - Unauthorized
-          - Forbidden
-        reason:
-          type: string
-        writerEpoch:
-          $ref: '#/components/schemas/Uint64'
-        sequence:
-          $ref: '#/components/schemas/Uint64'
-        evictedBelowSeq:
-          $ref: '#/components/schemas/Uint64'
+    Uint128:
+      type: string
+      pattern: ^(0|[1-9][0-9]{0,37}|[1-2][0-9]{38}|3[0-3][0-9]{37}|340[0-1][0-9]{35}|3402[0-7][0-9]{34}|34028[0-1][0-9]{33}|340282[0-2][0-9]{32}|3402823[0-5][0-9]{31}|34028236[0-5][0-9]{30}|340282366[0-8][0-9]{29}|3402823669[0-1][0-9]{28}|340282366920[0-8][0-9]{26}|3402823669209[0-2][0-9]{25}|34028236692093[0-7][0-9]{24}|340282366920938[0-3][0-9]{23}|3402823669209384[0-5][0-9]{22}|34028236692093846[0-2][0-9]{21}|340282366920938463[0-3][0-9]{20}|3402823669209384634[0-5][0-9]{19}|34028236692093846346[0-2][0-9]{18}|340282366920938463463[0-2][0-9]{17}|3402823669209384634633[0-6][0-9]{16}|34028236692093846346337[0-3][0-9]{15}|340282366920938463463374[0-5][0-9]{14}|34028236692093846346337460[0-6][0-9]{12}|340282366920938463463374607[0-3][0-9]{11}|3402823669209384634633746074[0-2][0-9]{10}|340282366920938463463374607430[0-9]{9}|340282366920938463463374607431[0-6][0-9]{8}|3402823669209384634633746074317[0-5][0-9]{7}|34028236692093846346337460743176[0-7][0-9]{6}|340282366920938463463374607431768[0-1][0-9]{5}|34028236692093846346337460743176820[0-9]{4}|340282366920938463463374607431768210[0-9]{3}|340282366920938463463374607431768211[0-3][0-9]{2}|3402823669209384634633746074317682114[0-4][0-9]{1}|34028236692093846346337460743176821145[0-4]|340282366920938463463374607431768211455)$
+      maxLength: 39
+      description: WAD integer, at most 340282366920938463463374607431768211455.
+      x-maximum: '340282366920938463463374607431768211455'
