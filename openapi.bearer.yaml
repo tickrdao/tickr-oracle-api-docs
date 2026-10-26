@@ -3,7 +3,7 @@ openapi: 3.1.0
 info:
   title: Tickr canonical oracle API
   version: 1.0.0
-  description: Read-only signed journal and per-feed store projections. Eligibility is evaluated at emission.
+  description: 'Read-only signed journal and per-feed store projections. Eligibility is evaluated at emission. Send `Authorization: Bearer <token>` on every /v1 request, and never put the token in a URL, a subscribe frame or a log. priceWad is a decimal string with 18 decimals; parse it as a 128-bit integer, never as a float. The docs home page lists the endpoints, the CA certificate, the limits, the contracts and how to verify a report.'
 servers:
 - url: /
 security:

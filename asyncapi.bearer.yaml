@@ -3,7 +3,7 @@ asyncapi: 3.0.0
 info:
   title: Tickr canonical report WebSocket
   version: 1.0.0
-  description: Bearer-authenticated upgrade; signed report objects match HTTPS exactly.
+  description: 'Bearer-authenticated upgrade; signed report objects match HTTPS exactly. Send `Authorization: Bearer <token>` on the upgrade request only, never in a subscribe frame, a URL or a log.'
 servers:
   portal:
     host: '{portalHost}'
