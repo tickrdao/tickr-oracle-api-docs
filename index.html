@@ -76,7 +76,7 @@ s42j2ier9WTYSCZxQP32KPFjc8rlQKQ=
 <h2 id="limits">Limits</h2>
 <ul>
   <li>Each signed report is valid for 3 s.</li>
-  <li>A feed is published on chain when its price moves <span data-server-read="deviationBps">5</span> basis points or more, when its status changes, or when <span data-server-read="heartbeatUs">1000000</span> µs (the heartbeat) pass without an update. Each of these makes an update due, and a due update waits at most <span data-server-read="maxWaitUs">1000000</span> µs, so the gap between two on-chain updates of a quiet feed can be longer than one heartbeat.</li>
+  <li>An update becomes due when its price moves <span data-server-read="deviationBps">5</span> basis points or more, when its status changes, or when <span data-server-read="heartbeatUs">1000000</span> µs (the heartbeat) pass without an update. Each of these makes an update due, and the relayer aims to land a quiet feed's update within one heartbeat. It flags an update as late when it was observed more than one heartbeat after the last landed update was observed. The max wait is only a start-up ceiling on the heartbeat.</li>
   <li>Requests: <span data-server-read="httpRequestsPerSec">100</span> HTTP requests per second in total, one budget shared by all clients. More than that returns 429.</li>
   <li>Connections: <span data-server-read="maxConnections">64</span> open connections in total, HTTP and WebSocket together. Up to <span data-server-read="maxSubscriptionsPerClient">32</span> subscriptions per WebSocket connection, and at most <span data-server-read="wsFramesPerSecPerConn">100</span> frames per second from each connection.</li>
 </ul>
