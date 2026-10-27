@@ -42,7 +42,7 @@
 <p>Always connect by the hostname, not by the address, because TLS checks that the hostname matches the certificate.</p>
 
 <h2 id="authentication">Authentication</h2>
-<p>The oracle owner sends you a token separately. Send the header <code>Authorization: Bearer &lt;token&gt;</code> on every <code>/v1</code> request, including the WebSocket upgrade at <code>/v1/ws</code>.</p>
+<p>The oracle owner sends you a token separately. Send the header <code>Authorization: Bearer &lt;token&gt;</code> on every <code>/v1</code> request, including the WebSocket upgrade at <code>/v1/ws</code>. Browser WebSocket clients cannot set this header, so connect from a server-side client.</p>
 <p>Never put the token in a URL, a subscribe frame or a log.</p>
 
 <h2 id="tls">TLS certificate</h2>
@@ -76,7 +76,7 @@ s42j2ier9WTYSCZxQP32KPFjc8rlQKQ=
 <h2 id="limits">Limits</h2>
 <ul>
   <li>Each signed report is valid for 3 s.</li>
-  <li>A feed is published on chain when its price moves <span data-server-read="deviationBps">5</span> basis points or more, when its status changes, and at least once every <span data-server-read="heartbeatUs">1000000</span> µs (the heartbeat). A due update waits at most <span data-server-read="maxWaitUs">1000000</span> µs.</li>
+  <li>An update becomes due when its price moves <span data-server-read="deviationBps">5</span> basis points or more, when its status changes, or when <span data-server-read="heartbeatUs">1000000</span> µs (the heartbeat) pass without an update. Each of these makes an update due, and the relayer aims to land a quiet feed's update within one heartbeat. It flags an update as late when it was observed more than one heartbeat after the last landed update was observed. The max wait is only a start-up ceiling on the heartbeat.</li>
   <li>Requests: <span data-server-read="httpRequestsPerSec">100</span> HTTP requests per second in total, one budget shared by all clients. More than that returns 429.</li>
   <li>Connections: <span data-server-read="maxConnections">64</span> open connections in total, HTTP and WebSocket together. Up to <span data-server-read="maxSubscriptionsPerClient">32</span> subscriptions per WebSocket connection, and at most <span data-server-read="wsFramesPerSecPerConn">100</span> frames per second from each connection.</li>
 </ul>
@@ -175,7 +175,7 @@ s42j2ier9WTYSCZxQP32KPFjc8rlQKQ=
   <tr><td>BTC/USDC</td><td><code>0x5a156200d5ecdc327279bfb6a5c10d46bdd2446a5a231a97cdb68b268d6f547f</code></td><td>BTC/USDC adapter <code>0x863c03645bcc3157121a3c9cae917a01a1de14a7</code></td></tr>
   <tr><td>ETH/USDC</td><td><code>0x67753308930ff5782f387f68e81e084331f64d11baa04277695df0a1047fd279</code></td><td>ETH/USDC adapter <code>0x1a4950ecfb630e5c8e6138140d3fcd8a3a2f566c</code></td></tr>
 </table>
-<p>Each adapter reads the OracleVerifier above and returns 8 decimals. Call <code>latestRoundData()</code>. It returns a price only while the OracleVerifier says that price is usable; otherwise it reverts with <code>ExpiredReport</code>, <code>UnusableFeed</code> or <code>NoDataPresent</code>. The adapter serves the current round only (#331): <code>getRoundData</code> for any other round reverts with <code>NoDataPresent</code>. <code>latestUsableUntil()</code> returns the current round and the second at which its price stops being usable.</p>
+<p>Each adapter reads the OracleVerifier above and returns 8 decimals. Call <code>latestRoundData()</code>. It returns a price only while the OracleVerifier says that price is usable; otherwise it reverts with <code>ExpiredReport</code>, <code>UnusableFeed</code> or <code>NoDataPresent</code>. The adapter serves the current round only, the round ID that <code>latestRoundData()</code> returns: <code>getRoundData</code> for any other round reverts with <code>NoDataPresent</code>. <code>latestUsableUntil()</code> returns the current round and the second at which its price stops being usable.</p>
 
 <h2 id="cutover">The 2026-10-26 redeploy</h2>
 <p>After cutover, report links /v1/reports/1/&lt;n&gt; and AggregatorV3 round IDs repeat with different reports and prices, so drop every cached link and round ID from before cutover. Also drop every saved WebSocket resume watermark from before cutover, and subscribe without resume. A saved watermark points into the old contracts' history, so the server may refuse it, start over from a snapshot, or resume from the wrong place.</p>
