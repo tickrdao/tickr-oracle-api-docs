@@ -87,7 +87,7 @@ s42j2ier9WTYSCZxQP32KPFjc8rlQKQ=
 
 <h3>Hashing rules</h3>
 <ul>
-  <li>Domain: TickrOracle, version 1, chain id 84257, verifying contract <code>0xe79794439c3c10bd1f4f176582c10fae7e545366</code> (the OracleVerifier). The domain type is <code>EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)</code>, and <code>domainSeparator = keccak256(abi.encode(keccak256(domainType), keccak256("TickrOracle"), keccak256("1"), chainId, verifyingContract))</code>.</li>
+  <li>Domain: TickrOracle, version 1, chain id 84257, verifying contract <code>0x78ba85a4bcbb8ead7ab7da0c17bbad840a99129f</code> (the OracleVerifier). The domain type is <code>EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)</code>, and <code>domainSeparator = keccak256(abi.encode(keccak256(domainType), keccak256("TickrOracle"), keccak256("1"), chainId, verifyingContract))</code>.</li>
   <li>The header type is <code>SnapshotHeader(uint16 protocolVersion,uint32 configVersion,bytes32 configHash,uint64 writerEpoch,uint64 sequence,uint64 generatedAtUs,uint64 expiresAtUs,uint8 feedCount,bytes32 feedsRoot)</code>. The struct hash is <code>keccak256(abi.encode(keccak256(headerType), the nine header fields))</code>, and the digest is <code>keccak256(0x1901 ‖ domainSeparator ‖ structHash)</code>.</li>
   <li>The leaf type is <code>FeedLeaf(bytes32 feedId,uint128 priceWad,uint64 observedAtUs,uint8 sourceMask,uint8 receiveOnlyMask,uint8 status,uint16 dispersionBps,uint32 reasonFlags)</code>. The leaf hash is <code>keccak256(keccak256(abi.encode(keccak256(leafType), the eight leaf fields)))</code>. The second keccak256 stops a leaf from passing as an inner node.</li>
   <li>Encode each field as one 32-byte ABI word, in the order of its type string. In the JSON, 64-bit and wider integers are decimal strings, and <code>status</code> is a name: <code>VALID</code> is 0, <code>UNSAFE</code> is 1 and <code>HALTED</code> is 2.</li>
@@ -101,40 +101,40 @@ s42j2ier9WTYSCZxQP32KPFjc8rlQKQ=
   <li>Recompute the digest from <code>header</code> under the domain above and compare it with <code>digest</code>.</li>
   <li>Recover the signer with <code>ecrecover(digest, v, r, s)</code> and compare it with the pinned signer. <code>digest</code> is the final EIP-712 hash, so add no <code>\x19Ethereum Signed Message</code> prefix. <code>signature</code> is 65 bytes in the order r, s, v; v is 27 or 28, and s must be low. A recovered signer means nothing without step 2, because only the digest binds it to this header.</li>
   <li>Hash each leaf and fold it with its proof as above. The result must equal <code>header.feedsRoot</code>.</li>
-  <li>Check every leaf the way the verifier's <code>_validLeaf</code> does, because the verifier refuses a batch that holds one bad leaf. <code>isFeed(feedId)</code> must be true, and <code>status</code> must be <code>VALID</code>, <code>UNSAFE</code> or <code>HALTED</code>. <code>sourceMask</code> may use only bits 0 to 2 and must be a subset of <code>allowedSourceMask(feedId)</code>. <code>receiveOnlyMask</code> must be a subset of <code>sourceMask</code>. <code>reasonFlags</code> may use only bits 0 to 10, and when bit 5 (dispersion saturated) is set, <code>dispersionBps</code> must be 65535. A leaf that is not <code>VALID</code> must have <code>priceWad</code> and <code>observedAtUs</code> both zero. A <code>VALID</code> leaf must have a non-zero <code>priceWad</code> and at least two bits set in <code>sourceMask</code>, and its <code>observedAtUs</code> must be within 500 ms of <code>generatedAtUs</code>. Then use a feed's price only when its status is <code>VALID</code>, as <code>getUsablePrice</code> does. An <code>UNSAFE</code> or <code>HALTED</code> leaf makes only its own feed unusable, so the other feeds in the report stay usable. Read <code>allowedSourceMask</code> from the OracleAdmin, because the copy in <code>/v1/feeds</code> is unsigned advice.</li>
+  <li>Check every leaf the way the verifier's <code>_validLeaf</code> does, because the verifier refuses a batch that holds one bad leaf. <code>isFeed(feedId)</code> must be true, and <code>status</code> must be <code>VALID</code>, <code>UNSAFE</code> or <code>HALTED</code>. <code>sourceMask</code> may use only bits 0 to 3 and must be a subset of <code>allowedSourceMask(feedId)</code>. <code>receiveOnlyMask</code> must be a subset of <code>sourceMask</code>. <code>reasonFlags</code> may use only bits 0 to 10, and when bit 5 (dispersion saturated) is set, <code>dispersionBps</code> must be 65535. A leaf that is not <code>VALID</code> must have <code>priceWad</code> and <code>observedAtUs</code> both zero. A <code>VALID</code> leaf must have a non-zero <code>priceWad</code> and at least two bits set in <code>sourceMask</code>, and its <code>observedAtUs</code> must be within 500 ms of <code>generatedAtUs</code>. Then use a feed's price only when its status is <code>VALID</code>, as <code>getUsablePrice</code> does. An <code>UNSAFE</code> or <code>HALTED</code> leaf makes only its own feed unusable, so the other feeds in the report stay usable. Read <code>allowedSourceMask</code> from the OracleAdmin, because the copy in <code>/v1/feeds</code> is unsigned advice.</li>
   <li>Reject the header unless <code>expiresAtUs</code> equals <code>generatedAtUs + 3_000_000</code>. For each feed you use, act only while <code>generatedAtUs / 1e6 ≤ block.timestamp</code> (with the left side rounded down) and <code>block.timestamp</code> is below the deadline <code>ceil(min(expiresAtUs, observedAtUs + 3_000_000) / 1e6)</code>. Off chain, use the current Unix time in seconds as <code>block.timestamp</code>. <code>labels</code> and <code>onchainRejectAtSec</code> are unsigned advice, so never use them in place of this check.</li>
 </ol>
 
 <h3 id="signed-report">A real signed report</h3>
-<p>This report is the new stack's <code>pushBatch</code> call in transaction <code>0x98be99ca108e19b6f9922f4ce3d10c7c6191e93bf443766bec8757119cee0278</code>, block 12536906, chain 84257. It is shown as the signed part of a <code>GET /v1/reports/latest</code> response, without the unsigned <code>watermark</code> and <code>labels</code>. Use it to test steps 2 to 4. The digest must match, the signer must recover as <code>0xf78c522598a39d78e594a4815b2f4821d1cab79f</code> (the <code>activeSigner()</code> at that block), and both proofs must reach <code>feedsRoot</code>. The report expired long ago, so step 6 rejects it.</p>
+<p>This report is the new stack's <code>pushBatch</code> call in transaction <code>0xed9a94468fb31b4a01da095437d5c8bd5ff6ab80b61354baf5f4821cc11b90ee</code>, block 16010530, chain 84257. It is shown as the signed part of a <code>GET /v1/reports/latest</code> response, without the unsigned <code>watermark</code> and <code>labels</code>. Use it to test steps 2 to 4. The digest must match, the signer must recover as <code>0xf78c522598a39d78e594a4815b2f4821d1cab79f</code> (the <code>activeSigner()</code> at that block), and both proofs must reach <code>feedsRoot</code>. The report expired long ago, so step 6 rejects it.</p>
 <pre id="signed-report-example">{
   "header": {
     "protocolVersion": 1,
     "configVersion": 2,
     "configHash": "0x8bf2afedb7edb0c7a8f2edd9305e4c7d68753e46194e37822121bf78aef7d0f1",
     "writerEpoch": "1",
-    "sequence": "16935",
-    "generatedAtUs": "1793036845146975",
-    "expiresAtUs": "1793036848146975",
+    "sequence": "24200",
+    "generatedAtUs": "1793639513072667",
+    "expiresAtUs": "1793639516072667",
     "feedCount": 2,
-    "feedsRoot": "0x2174a5f4bd5db793e8a4a6f7953c9127dd21ff9a6dbaf40439903698df86f4c9"
+    "feedsRoot": "0xfec697aecb33e48a6cbd23465c6839d613a0bd7698de88a79ece4f77cd23311b"
   },
-  "digest": "0x63b795eee9fe84899d7ccb80b28bb977d9d9e830e15554073fe0a4884055fad7",
-  "signature": "0x9e1f47d5228125a00cee0bf15e4a3111c423ccccdd0b3b7149f4102aee034f5d551f65e71c70099ea4ba808128e6289f595758190cd891e6c8e2664fd7515d4f1b",
+  "digest": "0x585d73c350e630590322c137e4c5786c2f42200236d05dfd3b81155da1b38fe6",
+  "signature": "0x048111ec74122784cac23084e220ab37e2ad2e6476a07d8127fb0d05591b948c0409f5ed968d75338520761960cd0c076e783098abfba0069720d2333b1f1eb21c",
   "leaves": [
     {
       "leaf": {
         "feedId": "0x5a156200d5ecdc327279bfb6a5c10d46bdd2446a5a231a97cdb68b268d6f547f",
-        "priceWad": "80127950000000000000000",
-        "observedAtUs": "1793036844686457",
+        "priceWad": "77366430000000000000000",
+        "observedAtUs": "1793639512891246",
         "sourceMask": 7,
         "receiveOnlyMask": 1,
         "status": "VALID",
-        "dispersionBps": 11,
+        "dispersionBps": 13,
         "reasonFlags": 0
       },
       "proof": [
-        "0x06164014893fc93af7cc2027224322d5e4d1cf32287312ca62e9fc477d4b1a81",
+        "0xf63ef12c4bafdd5e218aa559ebc425a02da1cd8db2a3bce7e370559c49fbcc59",
         "0xa575894e1fda5f5305a8462b982e5e4c2ddbb215a674bc2a15c7d744212c553e",
         "0x7f3322b7e4dfd47686ca67371a0fb44b12e2e57e474e92e2d89a0c330e18e90d",
         "0x28c956c27fe9f911e7be40e996b8fc1cb35cee6d0caa1cc55a0d166bf39c9c7f",
@@ -144,16 +144,16 @@ s42j2ier9WTYSCZxQP32KPFjc8rlQKQ=
     {
       "leaf": {
         "feedId": "0x67753308930ff5782f387f68e81e084331f64d11baa04277695df0a1047fd279",
-        "priceWad": "2320577000000000000000",
-        "observedAtUs": "1793036844815420",
+        "priceWad": "2265509000000000000000",
+        "observedAtUs": "1793639512891246",
         "sourceMask": 7,
         "receiveOnlyMask": 1,
         "status": "VALID",
-        "dispersionBps": 12,
+        "dispersionBps": 11,
         "reasonFlags": 0
       },
       "proof": [
-        "0xf0557c499dfdcd4c97fb94a2cbcbd9066d337035edbabdf826c7df75a627241d",
+        "0x77f909097c7741837c873397d9fa58aec1b0b55dfbd737d21a1f9b00453eb266",
         "0xa575894e1fda5f5305a8462b982e5e4c2ddbb215a674bc2a15c7d744212c553e",
         "0x7f3322b7e4dfd47686ca67371a0fb44b12e2e57e474e92e2d89a0c330e18e90d",
         "0x28c956c27fe9f911e7be40e996b8fc1cb35cee6d0caa1cc55a0d166bf39c9c7f",
@@ -165,21 +165,28 @@ s42j2ier9WTYSCZxQP32KPFjc8rlQKQ=
 
 <h2 id="contracts">On-chain contracts (testnet, chain 84257)</h2>
 <table>
-  <tr><td>OracleVerifier</td><td><code>0xe79794439c3c10bd1f4f176582c10fae7e545366</code></td><td>It verifies the signed reports and also stores them, so read prices here.</td></tr>
-  <tr><td>OracleAdmin</td><td><code>0xd081418c4ba09c84f501c3a209e90b3c27343e94</code></td><td>It holds the roles, the active epoch, the signer and the feed config.</td></tr>
+  <tr><td>OracleVerifier</td><td><code>0x78ba85a4bcbb8ead7ab7da0c17bbad840a99129f</code></td><td>It verifies the signed reports and also stores them, so read prices here.</td></tr>
+  <tr><td>OracleAdmin</td><td><code>0xf9886ab8b57962fb3f9eb4fadcddb14de83fb4b9</code></td><td>It holds the roles, the active epoch, the signer and the feed config.</td></tr>
   <tr><td>Signer</td><td><code>0xf78c522598a39d78e594a4815b2f4821d1cab79f</code></td><td>The report signer, <code>activeSigner()</code> on the OracleAdmin.</td></tr>
 </table>
 <p>Feeds and their Chainlink-style AggregatorV3Adapter contracts:</p>
 <table>
   <tr><th>Feed</th><th>Feed ID</th><th>Adapter</th></tr>
-  <tr><td>BTC/USDC</td><td><code>0x5a156200d5ecdc327279bfb6a5c10d46bdd2446a5a231a97cdb68b268d6f547f</code></td><td>BTC/USDC adapter <code>0x863c03645bcc3157121a3c9cae917a01a1de14a7</code></td></tr>
-  <tr><td>ETH/USDC</td><td><code>0x67753308930ff5782f387f68e81e084331f64d11baa04277695df0a1047fd279</code></td><td>ETH/USDC adapter <code>0x1a4950ecfb630e5c8e6138140d3fcd8a3a2f566c</code></td></tr>
+  <tr><td>BTC/USDC</td><td><code>0x5a156200d5ecdc327279bfb6a5c10d46bdd2446a5a231a97cdb68b268d6f547f</code></td><td>BTC/USDC adapter <code>0x0490aef539a211b7ed888b60a530a69ae6b39932</code></td></tr>
+  <tr><td>ETH/USDC</td><td><code>0x67753308930ff5782f387f68e81e084331f64d11baa04277695df0a1047fd279</code></td><td>ETH/USDC adapter <code>0x1be9df0cb95e63ad2630f6cd32c41a3688d0cb9c</code></td></tr>
 </table>
-<p>Each adapter reads the OracleVerifier above and returns 8 decimals. Call <code>latestRoundData()</code>. It returns a price only while the OracleVerifier says that price is usable; otherwise it reverts with <code>ExpiredReport</code>, <code>UnusableFeed</code> or <code>NoDataPresent</code>. The adapter serves the current round only, the round ID that <code>latestRoundData()</code> returns: <code>getRoundData</code> for any other round reverts with <code>NoDataPresent</code>. <code>latestUsableUntil()</code> returns the current round and the second at which its price stops being usable.</p>
+<p>Each adapter reads the OracleVerifier above and returns 8 decimals. Call <code>latestRoundData()</code>. It returns a price only while the OracleVerifier says that price is usable; otherwise it reverts with <code>ExpiredReport</code>, <code>UnusableFeed</code> or <code>NoDataPresent</code>. It also reverts with <code>PriceBelowOneE8</code> or <code>PriceExceedsUint64</code> when the converted price rounds to zero or exceeds <code>uint64</code>, and with <code>RoundIdOverflow</code> when the epoch or sequence is too large for the round ID. The adapter serves the current round only, the round ID that <code>latestRoundData()</code> returns: <code>getRoundData</code> for any other round reverts with <code>NoDataPresent</code>. <code>latestUsableUntil()</code> returns the current round and the second at which its price stops being usable.</p>
 
-<h2 id="cutover">The 2026-10-26 redeploy</h2>
+<h2 id="cutover">The 2026-11-02 redeploy</h2>
 <p>After cutover, report links /v1/reports/1/&lt;n&gt; and AggregatorV3 round IDs repeat with different reports and prices, so drop every cached link and round ID from before cutover. Also drop every saved WebSocket resume watermark from before cutover, and subscribe without resume. A saved watermark points into the old contracts' history, so the server may refuse it, start over from a snapshot, or resume from the wrong place.</p>
 <p>The contracts from before the redeploy no longer serve prices:</p>
+<ul>
+  <li>The old OracleVerifier <code>0xe79794439c3c10bd1f4f176582c10fae7e545366</code> is halted.</li>
+  <li>The old OracleAdmin <code>0xd081418c4ba09c84f501c3a209e90b3c27343e94</code> is halted.</li>
+  <li>The old BTC/USDC adapter <code>0x863c03645bcc3157121a3c9cae917a01a1de14a7</code> reads the halted OracleVerifier, so it reverts.</li>
+  <li>The old ETH/USDC adapter <code>0x1a4950ecfb630e5c8e6138140d3fcd8a3a2f566c</code> reads the halted OracleVerifier, so it reverts.</li>
+</ul>
+<p>The contracts from before the 2026-10-26 redeploy are also halted:</p>
 <ul>
   <li>The old OracleVerifier <code>0xa932ffe6e39e967e07ede70d4728f308e9d83411</code> is halted.</li>
   <li>The old OracleAdmin <code>0x2fd2a3ecd6c74c6f42db8075fe5807eb83275124</code> is halted.</li>
