@@ -213,7 +213,7 @@ components:
           type: integer
           minimum: 0
           maximum: 15
-          description: It is 0 for an active feed. For a feed configured as receive-only, which the API serves with status Unsafe, it equals allowedSourceMask.
+          description: It is 0 for an active feed. For a feed configured as receive-only, which the API serves with status UNSAFE, it equals allowedSourceMask.
         configVersion:
           type: integer
           minimum: 0

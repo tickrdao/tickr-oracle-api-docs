@@ -179,7 +179,7 @@ s42j2ier9WTYSCZxQP32KPFjc8rlQKQ=
 <p>Each adapter reads the OracleVerifier above and returns 8 decimals. Call <code>latestRoundData()</code>. It returns a price only while the OracleVerifier says that price is usable; otherwise it reverts with <code>ExpiredReport</code>, <code>UnusableFeed</code> or <code>NoDataPresent</code>. It also reverts with <code>PriceBelowOneE8</code> or <code>PriceExceedsUint64</code> when the converted price rounds to zero or exceeds <code>uint64</code>, and with <code>RoundIdOverflow</code> when the epoch or sequence is too large for the round ID. The adapter serves the current round only, the round ID that <code>latestRoundData()</code> returns: <code>getRoundData</code> for any other round reverts with <code>NoDataPresent</code>. <code>latestUsableUntil()</code> returns the current round and the second at which its price stops being usable.</p>
 
 <h2 id="oracle-adapter">Optional: the oracle adapter (batch-bound reads)</h2>
-<p><strong>Status: ready, not enabled.</strong> The oracle adapter is deployed and bound to the verifier. No gateway is enabled on it, so its price read returns <code>SnapshotMismatch</code>. A gateway is enabled on request.</p>
+<p><strong>Status: ready, not enabled.</strong> The oracle adapter is deployed and bound to the verifier. No gateway is enabled on it, so its price read returns <code>SnapshotMismatch</code> for every priced operation class. A gateway is enabled on request.</p>
 <p>The oracle adapter is optional. The OracleVerifier and the feed adapters do not depend on it or on any gateway. A consumer that only reads the latest price uses the OracleVerifier or the feed adapters above and needs no gateway.</p>
 <h3 id="gateway">What a gateway is</h3>
 <p>A gateway is an address that the adapter's admin enables with <code>setGateway</code>. It is the service that settles a batch of actions. Through <code>admitBatch</code> it hands the adapter the signed report that the batch must use, together with the batch's action IDs.</p>
@@ -193,7 +193,9 @@ s42j2ier9WTYSCZxQP32KPFjc8rlQKQ=
 <h3 id="gateway-reads">How it serves</h3>
 <ul>
   <li>The TickrOracleAdapter is <code>0xd50291afd5fb60dd120b71fd341451413d5c450d</code>.</li>
-  <li><code>priceFor</code> (one feed) and <code>crossMarginPrices</code> answer only for the report that an enabled gateway admitted, and only while that report is still the OracleVerifier's latest. Otherwise they revert with <code>SnapshotMismatch</code>, and with <code>Halted</code> while the OracleAdmin is halted or revoked.</li>
+  <li><code>priceFor(feedId, op)</code> and <code>crossMarginPrices(feedIds, op)</code> take an operation class. <code>Fill</code> is never priced: it reverts with <code>OperationNotPriced</code> before any other check.</li>
+  <li>They answer only for the report that an enabled gateway admitted, and only while that report is still the OracleVerifier's latest. They check, in order: that a latest report exists (else the OracleVerifier's <code>NoCanonicalReport</code>), that the OracleAdmin is neither halted nor revoked (else <code>Halted</code>), and that the admitted report is the latest (else <code>SnapshotMismatch</code>).</li>
+  <li>On a current admitted report, a feed can still revert with <code>MissingFeed</code>, <code>Halted</code> (a HALTED leaf), <code>UnsafeCollateral</code> (every priced class rejects UNSAFE), <code>FutureReport</code> or <code>ReportExpired</code>.</li>
   <li>A report that the publisher sends straight to the OracleVerifier becomes the latest there, but it is not admitted to the adapter. The adapter's reads then revert with <code>SnapshotMismatch</code> until the gateway admits that report.</li>
   <li>To enable a gateway, the adapter's admin calls <code>setGateway</code> with the gateway's address, and the OracleAdmin's admin grants the adapter the publisher role. Without that role the OracleVerifier refuses the admission with <code>UnauthorizedGateway</code>.</li>
 </ul>
@@ -207,16 +209,18 @@ s42j2ier9WTYSCZxQP32KPFjc8rlQKQ=
   <li>Positions (writer epoch and sequence) and AggregatorV3 round IDs start again at epoch 1, sequence 1. A reused position names a report of the new stack. It can match the old report at that position in protocol version, config hash, feed count, feed IDs and even leaf content. What always differs is the signing domain's verifying contract, and with it the signed digest and the signature. Tell the two stacks apart by the signing domain, not by comparing fields: recompute the digest with the OracleVerifier in the table above, as <a href="#verify">Verify a report</a> says, and a report of the old stack does not match.</li>
   <li>A WebSocket client that resumes with a cursor of before the window never gets a report of before the window, and no answer marks the cursor as old. The general resume frames are in the <a href="ws.html">WebSocket reference</a>. For a cursor of before the window, the answer depends on where it falls in the new store:
     <ul>
-      <li>The new store is empty: <code>BackfillUnavailable</code> with reason <code>empty_journal</code>, then the latest report only if one exists, then <code>live</code>. Do not wait for a report that may not come.</li>
-      <li>The cursor is below the new store's oldest kept report, or the replay is over its budget: <code>BackfillUnavailable</code>, then the current report only if one exists, then <code>live</code>.</li>
+      <li>The new store is empty: <code>BackfillUnavailable</code> with reason <code>empty_journal</code>, then the latest report as a <code>snapshot</code> frame only if one exists, then <code>live</code>. Do not wait for a report that may not come.</li>
+      <li>The cursor is below the new store's oldest kept report, the replay is over its budget, or the history read does not reach the new head: <code>BackfillUnavailable</code>, then the current report as a <code>resync</code> frame only if one exists, then <code>live</code>.</li>
       <li>The cursor equals the new head: <code>live</code> only, with no replayed report.</li>
-      <li>The cursor falls inside the new store: a replay of the new stack's reports after it, then <code>live</code>.</li>
+      <li>The cursor falls inside the new store: a replay of the new stack's reports after it as <code>replay</code> frames, then <code>live</code>.</li>
       <li>The cursor is ahead of the new head: <code>InvalidSubscription</code>, and the connection closes.</li>
-      <li>The store or its history fails a check: <code>NoUsableReport</code>, with reason <code>invalid_window</code>, <code>invalid_history_order</code>, <code>invalid_report</code> or <code>source_unavailable</code>.</li>
+      <li>The store or its history fails a check, or the source is unavailable: <code>NoUsableReport</code>, with a reason such as <code>invalid_window</code>, <code>invalid_history_order</code>, <code>invalid_report</code>, <code>source_unavailable</code> or <code>state_unavailable</code>; a standby server can also answer <code>lease_activation_pending</code> or <code>parked</code>. The subscription is dropped and the connection stays open; subscribe again.</li>
+      <li>These cases follow the server's resume code (the oracle API's <code>replay.rs</code>, <code>initialize</code> and <code>backfill</code>); any other answer of that code path can also come.</li>
     </ul>
-    A replayed report that fails its check is an error to the client. A latest report that fails its check is logged and not sent; the server sends its last accepted report instead, if it has one. A long replay can also end with a <code>SlowConsumer</code> close, as on any subscription.</li>
-  <li>A client that compares positions to find the newer report treats new reports as old until the new sequence passes the old one.</li>
+    A replayed report that fails its check is an error to the client. A latest report that fails its check is logged and not sent; the server sends its last accepted report instead, if it has one, and that report is always one of the new stack. A long replay can also end with a <code>SlowConsumer</code> close, as on any subscription.</li>
+  <li>The old stack also ran at writer epoch 1. So a client that compares positions (writer epoch, then sequence) to find the newer report treats new reports as old until the new sequence passes the old one.</li>
   <li>Drop every stored position, cursor and round ID from before the window, and subscribe without resume.</li>
+  <li>Replace the BTC/USDC and ETH/USDC feed IDs in every saved subscription with the BTC/USDT and ETH/USDT feed IDs in the table above. A subscribe frame that names a retired feed ID gets <code>UnknownFeed</code>, and that subscription does not start.</li>
 </ul>
 <p>The contracts from before the window no longer serve prices:</p>
 <ul>

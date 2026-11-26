@@ -375,7 +375,7 @@ components:
       x-maximum: '340282366920938463463374607431768211455'
 x-close-codes:
   '1008':
-    InvalidSubscription: Error frame then close for fragmented, malformed, oversized or schema-invalid data.
+    InvalidSubscription: Error frame then close for fragmented, malformed, oversized or schema-invalid data, and for a resume cursor ahead of the journal head.
     SlowConsumer: Close reason SlowConsumer bypasses the full data queue; preceding error is not required.
   '1011':
     InternalError: Sent after a session receive failure; the close reason is the fixed text "internal error". A failure while projecting, encoding or writing a delivery ends the connection without this close.
