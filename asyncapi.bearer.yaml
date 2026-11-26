@@ -169,7 +169,7 @@ components:
           evictedBelowSeq: {}
           type: {}
         additionalProperties: false
-      description: BackfillUnavailable carries writerEpoch, sequence and evictedBelowSeq from a populated retained window, followed by resync when a current report exists. An empty journal has reason=empty_journal and no invented bounds.
+      description: BackfillUnavailable carries writerEpoch, sequence and evictedBelowSeq from a populated retained window, followed by resync when a current report exists. An empty journal has reason=empty_journal and no invented bounds, followed by a snapshot frame when a current report exists.
   schemas:
     Bytes32:
       type: string
