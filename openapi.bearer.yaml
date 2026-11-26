@@ -207,11 +207,13 @@ components:
         allowedSourceMask:
           type: integer
           minimum: 0
-          maximum: 7
+          maximum: 15
+          description: The price sources this feed may use. Each bit marks one price source; four bits are in use.
         allowedReceiveOnlyMask:
           type: integer
           minimum: 0
-          maximum: 7
+          maximum: 15
+          description: It is 0 for an active feed. For a feed configured as receive-only, which the API serves with status Unsafe, it equals allowedSourceMask.
         configVersion:
           type: integer
           minimum: 0
@@ -363,11 +365,13 @@ components:
         sourceMask:
           type: integer
           minimum: 0
-          maximum: 7
+          maximum: 15
+          description: The price sources that contributed to this leaf. Each bit marks one price source; four bits are in use.
         receiveOnlyMask:
           type: integer
           minimum: 0
-          maximum: 7
+          maximum: 15
+          description: The contributing sources timed by when the oracle received their quote. It is always a subset of sourceMask.
         status:
           $ref: '#/components/schemas/Status'
         dispersionBps:
